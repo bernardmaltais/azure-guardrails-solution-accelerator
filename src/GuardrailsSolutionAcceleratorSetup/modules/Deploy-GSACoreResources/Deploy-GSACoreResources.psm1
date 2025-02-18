@@ -13,6 +13,7 @@ Function Deploy-GSACoreResources {
     $ErrorActionPreference = 'Stop'
 
     Write-Verbose "Initating deployment of core GSA resources..."
+    Write-Verbose "Spy... spy... spy..."
 
     # create resource broup
     Write-Verbose "Creating resource group '$($config['runtime']['resourceGroup'])' in '$($config.region)' location."
@@ -25,6 +26,7 @@ Function Deploy-GSACoreResources {
 
     # deploy primary bicep template
     Write-Verbose "Deploying GSA core resource via bicep template..."
+    Writ
     try { 
         $mainBicepDeployment = New-AzResourceGroupDeployment -ResourceGroupName $config['runtime']['resourceGroup'] -Name "guardraildeployment$(get-date -format "ddmmyyHHmmss")" `
             -TemplateParameterObject $paramObject -TemplateFile "$PSScriptRoot/../../../../setup/IaC/guardrails.bicep" -WarningAction SilentlyContinue -ErrorAction Stop
@@ -35,6 +37,9 @@ Function Deploy-GSACoreResources {
     }
     # add automation account msi to config object
     $config['guardrailsAutomationAccountMSI'] = $mainBicepDeployment.Outputs.guardrailsAutomationAccountMSI.value
+
+    Write-Verbose "$($config['guardrailsAutomationAccountMSI'])"
+
     Write-Verbose "Core resource bicep deployment complete!"
 
     Write-Verbose "Granting Automation Account MSI permission to the Graph API"
@@ -83,6 +88,8 @@ Function Deploy-GSACoreResources {
     Write-Verbose "Granting the Automation Account required permissions to the deployed environment (for scanning)..."
     try {
         Write-Verbose "`tAssigning reader access to the Automation Account Managed Identity for MG: $($rootmg.DisplayName)"
+        Write-Verbose "$($config.guardrailsAutomationAccountMSI) $($config['runtime']['tenantRootManagementGroupId'])"
+        
         New-AzRoleAssignment -ObjectId $config.guardrailsAutomationAccountMSI -RoleDefinitionName Reader -Scope $config['runtime']['tenantRootManagementGroupId'] | Out-Null
 
         Write-Verbose "`tAssigning 'Reader and Data Access' role to Automation Account MSI on Guardrails Storage Account '$($config['runtime']['StorageAccountName'])'"
