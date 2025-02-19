@@ -26,8 +26,13 @@ Function Deploy-GSACoreResources {
 
     # deploy primary bicep template
     Write-Verbose "Deploying GSA core resource via bicep template..."
-    Writ
-    try { 
+    
+    try {
+        Write-Verbose "ResourceGroupName: $($config['runtime']['resourceGroup'])"
+        Write-Verbose "Deployment Name: guardraildeployment$(get-date -format 'ddmmyyHHmmss')"
+        Write-Verbose "TemplateParameterObject: $($paramObject | ConvertTo-Json -Depth 10)"
+        Write-Verbose "TemplateFile: $PSScriptRoot/../../../../setup/IaC/guardrails.bicep"
+        
         $mainBicepDeployment = New-AzResourceGroupDeployment -ResourceGroupName $config['runtime']['resourceGroup'] -Name "guardraildeployment$(get-date -format "ddmmyyHHmmss")" `
             -TemplateParameterObject $paramObject -TemplateFile "$PSScriptRoot/../../../../setup/IaC/guardrails.bicep" -WarningAction SilentlyContinue -ErrorAction Stop
     }
@@ -87,6 +92,9 @@ Function Deploy-GSACoreResources {
 
     Write-Verbose "Granting the Automation Account required permissions to the deployed environment (for scanning)..."
     try {
+        Write-Verbose "Sleeping for 30 seconds to ensure propagation of permissions..."
+        Start-Sleep -Seconds 30
+
         Write-Verbose "`tAssigning reader access to the Automation Account Managed Identity for MG: $($rootmg.DisplayName)"
         Write-Verbose "$($config.guardrailsAutomationAccountMSI) $($config['runtime']['tenantRootManagementGroupId'])"
         
